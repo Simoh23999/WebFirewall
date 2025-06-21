@@ -1,0 +1,19 @@
+﻿@inherits LayoutView
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row px-4">
+            <a href="/dashboard" target="_top">
+                <i class="fas fa-shield-alt me-2"></i>Web Firewall Dashboard
+            </a>
+        </div>
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
