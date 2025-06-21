@@ -1,0 +1,377 @@
+﻿@page "/dashboard"
+@using WebFirewall.Models
+@using WebFirewall.Services
+@inject IFirewallLogService LogService
+@inject ISecurityService SecurityService
+@inject IJSRuntime JSRuntime
+@implements IDisposable
+
+<PageTitle>Firewall Dashboard</PageTitle>
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h3 mb-0 text-gray-800">Firewall Dashboard</h1>
+            <p class="text-muted">Surveillance et administration du pare-feu applicatif</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary" @onclick="RefreshData">
+                <i class="fas fa-sync-alt"></i> Actualiser
+            </button>
+        </div>
+    </div>
+
+    <!-- Cartes de statistiques -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Requêtes totales
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                @stats?.TotalRequests.ToString("N0")
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-globe fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Requêtes bloquées
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                @stats?.BlockedRequests.ToString("N0")
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-shield-alt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Activité suspecte
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                @stats?.SuspiciousRequests.ToString("N0")
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                IPs bloquées
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                @blockedIps.Count.ToString("N0")
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-ban fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graphiques -->
+    <div class="row mb-4">
+        <div class="col-xl-6 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Types d'attaques</h6>
+                </div>
+                <div class="card-body">
+                    @if (stats?.AttackTypes.Any() == true)
+                    {
+                        <canvas id="attackTypesChart" width="400" height="200"></canvas>
+                    }
+                    else
+                    {
+                        <p class="text-muted">Aucune donnée disponible</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-6 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Top IPs attaquantes</h6>
+                </div>
+                <div class="card-body">
+                    @if (stats?.TopAttackerIps.Any() == true)
+                    {
+                        <div class="list-group">
+                            @foreach (var ip in stats.TopAttackerIps.Take(10))
+                            {
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>
+                                        <strong>@ip.Key</strong>
+                                        @if (blockedIps.Any(b => b.IpAddress == ip.Key))
+                                        {
+                                            <span class="badge badge-danger ml-2">Bloquée</span>
+                                        }
+                                    </span>
+                                    <div>
+                                        <span class="badge badge-warning badge-pill">@ip.Value</span>
+                                        <button class="btn btn-sm btn-outline-danger ml-2" 
+                                                @onclick="() => BlockIp(ip.Key)">
+                                            <i class="fas fa-ban"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">Aucune donnée disponible</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logs récents -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Logs récents</h6>
+                    <div class="dropdown no-arrow">
+                        <button class="btn btn-outline-secondary btn-sm" @onclick="ClearLogs">
+                            <i class="fas fa-trash"></i> Vider les logs
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (stats?.RecentLogs.Any() == true)
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>IP Client</th>
+                                        <th>Méthode</th>
+                                        <th>Chemin</th>
+                                        <th>Type d'attaque</th>
+                                        <th>Action</th>
+                                        <th>Payload</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var log in stats.RecentLogs)
+                                    {
+                                        <tr class="@GetRowClass(log.Action)">
+                                            <td>@log.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                            <td>
+                                                <strong>@log.ClientIp</strong>
+                                                @if (blockedIps.Any(b => b.IpAddress == log.ClientIp))
+                                                {
+                                                    <span class="badge badge-danger ml-1">Bloquée</span>
+                                                }
+                                            </td>
+                                            <td><span class="badge badge-info">@log.Method</span></td>
+                                            <td><code>@log.Path</code></td>
+                                            <td>
+                                                <span class="badge @GetAttackTypeBadge(log.AttackType)">
+                                                    @log.AttackType
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge @GetActionBadge(log.Action)">
+                                                    @log.Action
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">
+                                                    @(log.Payload.Length > 50 ? log.Payload.Substring(0, 50) + "..." : log.Payload)
+                                                </small>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">Aucun log disponible</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- IPs bloquées -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">IPs bloquées</h6>
+                </div>
+                <div class="card-body">
+                    @if (blockedIps.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Adresse IP</th>
+                                        <th>Bloquée le</th>
+                                        <th>Raison</th>
+                                        <th>Nb d'attaques</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var ip in blockedIps)
+                                    {
+                                        <tr>
+                                            <td><strong>@ip.IpAddress</strong></td>
+                                            <td>@ip.BlockedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                            <td>@ip.Reason</td>
+                                            <td>@ip.AttackCount</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-success" 
+                                                        @onclick="() => UnblockIp(ip.IpAddress)">
+                                                    <i class="fas fa-unlock"></i> Débloquer
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">Aucune IP bloquée</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private DashboardStats? stats;
+    private List<IpBlockInfo> blockedIps = new();
+    private System.Threading.Timer? refreshTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshData();
+        
+        // Actualisation automatique toutes les 30 secondes
+        refreshTimer = new System.Threading.Timer(async _ =>
+        {
+            await RefreshData();
+            await InvokeAsync(StateHasChanged);
+        }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+    }
+
+    private async Task RefreshData()
+    {
+        try
+        {
+            stats = await LogService.GetDashboardStatsAsync();
+            blockedIps = SecurityService.GetBlockedIps();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erreur lors du rafraîchissement: {ex.Message}");
+        }
+    }
+
+    private void BlockIp(string ipAddress)
+    {
+        SecurityService.BlockIp(ipAddress, "Blocked from dashboard");
+        blockedIps = SecurityService.GetBlockedIps();
+        StateHasChanged();
+    }
+
+    private void UnblockIp(string ipAddress)
+    {
+        SecurityService.UnblockIp(ipAddress);
+        blockedIps = SecurityService.GetBlockedIps();
+        StateHasChanged();
+    }
+
+    private async Task ClearLogs()
+    {
+        await LogService.ClearLogsAsync();
+        await RefreshData();
+        StateHasChanged();
+    }
+
+    private string GetRowClass(string action)
+    {
+        return action switch
+        {
+            "BLOCKED" => "table-danger",
+            "LOGGED" => "table-warning",
+            _ => ""
+        };
+    }
+
+    private string GetAttackTypeBadge(string attackType)
+    {
+        return attackType switch
+        {
+            "XSS" => "badge-danger",
+            "SQLi" => "badge-danger",
+            "LFI" => "badge-warning",
+            "SSRF" => "badge-warning",
+            "DoS" => "badge-info",
+            _ => "badge-secondary"
+        };
+    }
+
+    private string GetActionBadge(string action)
+    {
+        return action switch
+        {
+            "BLOCKED" => "badge-danger",
+            "LOGGED" => "badge-warning",
+            _ => "badge-secondary"
+        };
+    }
+
+    public void Dispose()
+    {
+        refreshTimer?.Dispose();
+    }
+}
