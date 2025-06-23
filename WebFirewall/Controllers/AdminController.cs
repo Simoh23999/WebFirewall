@@ -9,12 +9,12 @@ namespace WebFirewall.Controllers
     public class AdminController : ControllerBase
     {
         private readonly FirewallLogService _logService;
-        private readonly ISecurityService _securityService;
+        private readonly SecurityService _securityService;
         private readonly ILogger<AdminController> _logger;
 
         public AdminController(
             FirewallLogService logService,
-            ISecurityService securityService,
+            SecurityService securityService,
             ILogger<AdminController> logger)
         {
             _logService = logService;
@@ -81,7 +81,6 @@ namespace WebFirewall.Controllers
             {
                 timestamp = DateTime.UtcNow,
                 totalBlocked = stats.BlockedRequests,
-                totalSuspicious = stats.SuspiciousRequests,
                 blockedIpsCount = blockedIps.Count,
                 topAttackTypes = stats.AttackTypes.OrderByDescending(x => x.Value).Take(5),
                 recentActivity = stats.RecentLogs.Take(10)

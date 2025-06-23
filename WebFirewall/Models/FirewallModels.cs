@@ -1,5 +1,14 @@
 ﻿namespace WebFirewall.Models
 {
+    public enum AttackType
+    {
+        XSS,
+        SQLi,
+        LFI,
+        DoS,
+        SSRF,
+        Unknown
+    }
     public class FirewallConfig
     {
         public bool BlockMaliciousRequests { get; set; } = true;
@@ -33,21 +42,12 @@
         public string Payload { get; set; } = string.Empty;
     }
 
-    public enum AttackType
-    {
-        XSS,
-        SQLi,
-        LFI,
-        DoS,
-        SSRF,
-        Unknown
-    }
+
 
     public class DashboardStats
     {
         public int TotalRequests { get; set; }
         public int BlockedRequests { get; set; }
-        public int SuspiciousRequests { get; set; }
         public Dictionary<string, int> AttackTypes { get; set; } = new();
         public Dictionary<string, int> TopAttackerIps { get; set; } = new();
         public List<FirewallLogEntry> RecentLogs { get; set; } = new();

@@ -29,7 +29,7 @@ builder.Services.AddRateLimiter(options =>
 
 // Services personnalisés
 builder.Services.AddSingleton<FirewallLogService>();
-builder.Services.AddSingleton<ISecurityService, SecurityService>();
+builder.Services.AddSingleton<SecurityService>();
 builder.Services.Configure<FirewallConfig>(builder.Configuration.GetSection("FirewallConfig"));
 var app = builder.Build();
 

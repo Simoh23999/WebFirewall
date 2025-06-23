@@ -5,19 +5,8 @@ using WebFirewall.Models;
 
 namespace WebFirewall.Services
 {
-    public interface ISecurityService
-    {
-        bool IsIpBlocked(string ip);
-        void BlockIp(string ip, string reason);
-        void UnblockIp(string ip);
-        List<IpBlockInfo> GetBlockedIps();
-        bool IsIpWhitelisted(string ip);
-        void AddToWhitelist(string ip);
-        void RemoveFromWhitelist(string ip);
-        List<string> GetWhitelistedIps();
-    }
 
-    public class SecurityService : ISecurityService
+    public class SecurityService
     {
         private readonly ConcurrentDictionary<string, IpBlockInfo> _blockedIps = new();
         private readonly ConcurrentDictionary<string, int> _ipRequestCounts = new();
@@ -52,7 +41,7 @@ namespace WebFirewall.Services
             var blockInfo = new IpBlockInfo
             {
                 IpAddress = ip,
-                BlockedAt = DateTime.UtcNow,
+                BlockedAt = DateTime.UtcNow.AddHours(1),
                 Reason = reason,
                 AttackCount = _ipRequestCounts.GetValueOrDefault(ip, 0)
             };
