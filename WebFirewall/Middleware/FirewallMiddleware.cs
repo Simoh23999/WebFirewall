@@ -11,7 +11,7 @@ namespace WebFirewall.Middleware
     {
         private readonly RequestDelegate _next;
         private readonly FirewallLogService _logService;
-        private readonly ISecurityService _securityService;
+        private readonly SecurityService _securityService;
         private readonly FirewallConfig _config;
         private readonly ILogger<FirewallMiddleware> _logger;
 
@@ -21,7 +21,7 @@ namespace WebFirewall.Middleware
         public FirewallMiddleware(
             RequestDelegate next,
             FirewallLogService logService,
-            ISecurityService securityService,
+            SecurityService securityService,
             IOptions<FirewallConfig> config,
             ILogger<FirewallMiddleware> logger)
         {

@@ -1,16 +1,18 @@
 ﻿@using Microsoft.AspNetCore.Components.Web
 @inherits LayoutComponentBase
+@inject NavigationManager Navigation
 
 <div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+
 
     <main>
+
+        <a href="/swagger">Lien vers la page Swagger</a>
         <div class="top-row px-4">
-            <a href="/dashboard" target="_top">
-                <i class="fas fa-shield-alt me-2"></i>Web Firewall Dashboard
-            </a>
+            <span class="text-nowrap">
+                <i class="fas fa-clock me-1"></i>
+                <span id="currentTime"></span>
+            </span>
         </div>
 
         <article class="content px-4">
@@ -18,3 +20,30 @@
         </article>
     </main>
 </div>
+
+<script>
+    // Mise à jour de l'heure en temps réel
+    function updateTime() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('fr-FR');
+        const timeElement = document.getElementById('currentTime');
+        if (timeElement) {
+            timeElement.textContent = timeString;
+        }
+    }
+
+    // Démarrer la mise à jour du temps
+    if (typeof window.timeInterval === 'undefined') {
+        updateTime();
+        window.timeInterval = setInterval(updateTime, 1000);
+    }
+</script>
+
+@code {
+    private bool isLoading = false;
+
+    private void GoToSwagger()
+    {
+        Navigation.NavigateTo("/swagger");
+    }
+}

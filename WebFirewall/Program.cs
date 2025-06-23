@@ -12,6 +12,17 @@ builder.Services.AddControllers();
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 
+//swager
+builder.Services.AddEndpointsApiExplorer();
+//builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    options.IncludeXmlComments(xmlPath);
+});
+
+
 // Configuration du rate limiting
 builder.Services.AddRateLimiter(options =>
 {
@@ -35,11 +46,19 @@ builder.Services.Configure<FirewallConfig>(builder.Configuration.GetSection("Fir
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
+
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "WebFirewall v1");
+        c.RoutePrefix = "swagger"; // route /swagger
+    });
+
+    //app.UseExceptionHandler("/Home/Error");
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
+    //app.UseHsts();
 }
 
 app.UseHttpsRedirection();
@@ -54,10 +73,16 @@ app.UseMiddleware<FirewallMiddleware>();
 app.UseRateLimiter();
 app.UseAuthorization();
 
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=api/Admin}/{action=dashboard}/{id?}");
-//app.MapControllers();
+app.MapGet("/", context =>
+{
+    context.Response.Redirect("/dashboard");
+    return Task.CompletedTask;
+});
+
+//app.MapControllerRoute(
+//    name: "default",
+//    pattern: "{controller=api/Admin}/{action=dashboard}/{id?}");
+app.MapControllers();
 
 app.MapRazorPages();
 app.MapBlazorHub();

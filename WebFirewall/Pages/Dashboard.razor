@@ -8,36 +8,41 @@
 @implements IDisposable
 @using Microsoft.JSInterop
 
-
-
-
 <PageTitle>Firewall Dashboard</PageTitle>
 
 <div class="container-fluid">
     <div class="row mb-4">
         <div class="col">
             <h1 class="h3 mb-0 text-gray-800">Firewall Dashboard</h1>
-            <p class="text-muted">Surveillance et administration du pare-feu applicatif</p>
+            
         </div>
         <div class="col-auto">
-            <button class="btn btn-primary" @onclick="RefreshData">
-                <i class="fas fa-sync-alt"></i> Actualiser
+            <button class="btn btn-primary" @onclick="RefreshData" disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                }
+                else
+                {
+                    <i class="fas fa-sync-alt me-2"></i>
+                }
+                Actualiser
             </button>
         </div>
     </div>
 
     <!-- Cartes de statistiques -->
     <div class="row mb-4">
-        <div class="col-xl-3 col-md-6 mb-4">
+        <div class="col-xl-4 col-md-6 mb-3">
             <div class="card border-left-primary shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                Requêtes totales
+                                <b>Requêtes totales</b>
                             </div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                @stats?.TotalRequests.ToString("N0")
+                                @(stats?.TotalRequests.ToString("N0") ?? "0")
                             </div>
                         </div>
                         <div class="col-auto">
@@ -48,16 +53,16 @@
             </div>
         </div>
 
-        <div class="col-xl-3 col-md-6 mb-4">
+        <div class="col-xl-4 col-md-6 mb-3">
             <div class="card border-left-danger shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
-                                Requêtes bloquées
+                                <b>Requêtes bloquées</b>
                             </div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                @stats?.BlockedRequests.ToString("N0")
+                                @(stats?.BlockedRequests.ToString("N0") ?? "0")
                             </div>
                         </div>
                         <div class="col-auto">
@@ -68,33 +73,14 @@
             </div>
         </div>
 
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-warning shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                Activité suspecte
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                @stats?.SuspiciousRequests.ToString("N0")
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <div class="col-xl-3 col-md-6 mb-4">
+        <div class="col-xl-4 col-md-6 mb-3">
             <div class="card border-left-info shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                IPs bloquées
+                                <b>IPs bloquées</b>
                             </div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
                                 @blockedIps.Count.ToString("N0")
@@ -109,25 +95,9 @@
         </div>
     </div>
 
-    <!-- Graphiques -->
+    <!-- Top IPs attaquantes -->
     <div class="row mb-4">
-        <div class="col-xl-6 col-lg-7">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Types d'attaques</h6>
-                </div>
-                <div class="card-body">
-                    @if (stats?.AttackTypes.Any() == true)
-                    {
-                        <canvas id="attackTypesChart" width="400" height="200"></canvas>
-                    }
-                    else
-                    {
-                        <p class="text-muted">Aucune donnée disponible</p>
-                    }
-                </div>
-            </div>
-        </div>
+
 
         <div class="col-xl-6 col-lg-5">
             <div class="card shadow mb-4">
@@ -135,7 +105,7 @@
                     <h6 class="m-0 font-weight-bold text-primary">Top IPs attaquantes</h6>
                 </div>
                 <div class="card-body">
-                    @if (stats?.TopAttackerIps.Any() == true)
+                    @if (stats?.TopAttackerIps?.Any() == true)
                     {
                         <div class="list-group">
                             @foreach (var ip in stats.TopAttackerIps.Take(10))
@@ -145,15 +115,19 @@
                                         <strong>@ip.Key</strong>
                                         @if (blockedIps.Any(b => b.IpAddress == ip.Key))
                                         {
-                                            <span class="badge badge-danger ml-2">Bloquée</span>
+                                            <span class="badge bg-danger ms-2">Bloquée</span>
                                         }
                                     </span>
                                     <div>
-                                        <span class="badge badge-warning badge-pill">@ip.Value</span>
-                                        <button class="btn btn-sm btn-outline-danger ml-2" 
-                                                @onclick="() => BlockIp(ip.Key)">
-                                            <i class="fas fa-ban"></i>
-                                        </button>
+                                        <span class="badge bg-warning text-dark">@ip.Value</span>
+                                        @if (!blockedIps.Any(b => b.IpAddress == ip.Key))
+                                        {
+                                            <button class="btn btn-sm btn-outline-danger ms-2"
+                                                    @onclick="@(() => BlockIp(ip.Key))"
+                                                    disabled="@isLoading">
+                                                <i class="fas fa-ban"></i>
+                                            </button>
+                                        }
                                     </div>
                                 </div>
                             }
@@ -168,20 +142,30 @@
         </div>
     </div>
 
-    <!-- Logs récents -->
+    <!-- Logs recents -->
     <div class="row">
         <div class="col-12">
             <div class="card shadow mb-4">
                 <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                     <h6 class="m-0 font-weight-bold text-primary">Logs récents</h6>
-                    <div class="dropdown no-arrow">
-                        <button class="btn btn-outline-secondary btn-sm" @onclick="ClearLogs">
-                            <i class="fas fa-trash"></i> Vider les logs
+                    <div>
+                        <button class="btn btn-outline-secondary btn-sm"
+                                @onclick="ClearLogs"
+                                disabled="@isLoading">
+                            @if (isLoading)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                            }
+                            else
+                            {
+                                <i class="fas fa-trash me-1"></i>
+                            }
+                            Vider les logs
                         </button>
                     </div>
                 </div>
                 <div class="card-body">
-                    @if (stats?.RecentLogs.Any() == true)
+                    @if (stats?.RecentLogs?.Any() == true)
                     {
                         <div class="table-responsive">
                             <table class="table table-striped">
@@ -205,10 +189,10 @@
                                                 <strong>@log.ClientIp</strong>
                                                 @if (blockedIps.Any(b => b.IpAddress == log.ClientIp))
                                                 {
-                                                    <span class="badge badge-danger ml-1">Bloquée</span>
+                                                    <span class="badge bg-danger ms-1">Bloquée</span>
                                                 }
                                             </td>
-                                            <td><span class="badge badge-info">@log.Method</span></td>
+                                            <td><span class="badge bg-info">@log.Method</span></td>
                                             <td><code>@log.Path</code></td>
                                             <td>
                                                 <span class="badge @GetAttackTypeBadge(log.AttackType)">
@@ -222,7 +206,7 @@
                                             </td>
                                             <td>
                                                 <small class="text-muted">
-                                                    @(log.Payload.Length > 50 ? log.Payload.Substring(0, 50) + "..." : log.Payload)
+                                                    @(log.Payload?.Length > 50 ? log.Payload.Substring(0, 50) + "..." : log.Payload)
                                                 </small>
                                             </td>
                                         </tr>
@@ -240,7 +224,7 @@
         </div>
     </div>
 
-    <!-- IPs bloquées -->
+    <!-- IPs bloquees -->
     <div class="row">
         <div class="col-12">
             <div class="card shadow mb-4">
@@ -270,8 +254,9 @@
                                             <td>@ip.Reason</td>
                                             <td>@ip.AttackCount</td>
                                             <td>
-                                                <button class="btn btn-sm btn-outline-success" 
-                                                        @onclick="() => UnblockIp(ip.IpAddress)">
+                                                <button class="btn btn-sm btn-outline-success"
+                                                        @onclick="@(() => UnblockIp(ip.IpAddress))"
+                                                        disabled="@isLoading">
                                                     <i class="fas fa-unlock"></i> Débloquer
                                                 </button>
                                             </td>
@@ -295,51 +280,122 @@
     private DashboardStats? stats;
     private List<IpBlockInfo> blockedIps = new();
     private System.Threading.Timer? refreshTimer;
+    private bool isLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
         await RefreshData();
-        
+
         // Actualisation automatique toutes les 30 secondes
         refreshTimer = new System.Threading.Timer(async _ =>
         {
-            await RefreshData();
-            await InvokeAsync(StateHasChanged);
+            await InvokeAsync(async () =>
+            {
+                await RefreshData();
+                StateHasChanged();
+            });
         }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && stats?.AttackTypes?.Any() == true)
+        {
+            await JSRuntime.InvokeVoidAsync("createAttackTypesChart", stats.AttackTypes);
+        }
     }
 
     private async Task RefreshData()
     {
         try
         {
+            isLoading = true;
+            StateHasChanged();
+
             stats = await LogService.GetDashboardStatsAsync();
             blockedIps = SecurityService.GetBlockedIps();
+
+            // Mettre à jour le graphique après le rendu
+            if (stats?.AttackTypes?.Any() == true)
+            {
+                await Task.Delay(100); // Petit délai pour s'assurer que le DOM est mis à jour
+                await JSRuntime.InvokeVoidAsync("createAttackTypesChart", stats.AttackTypes);
+            }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Erreur lors du rafraîchissement: {ex.Message}");
         }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
     }
 
-    private void BlockIp(string ipAddress)
+    private Task BlockIp(string ipAddress)
     {
-        SecurityService.BlockIp(ipAddress, "Blocked from dashboard");
-        blockedIps = SecurityService.GetBlockedIps();
-        StateHasChanged();
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            SecurityService.BlockIp(ipAddress, "Blocked from dashboard");
+            blockedIps = SecurityService.GetBlockedIps();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erreur lors du blocage de l'IP {ipAddress}: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+        return Task.CompletedTask;
     }
 
-    private void UnblockIp(string ipAddress)
+    private Task UnblockIp(string ipAddress)
     {
-        SecurityService.UnblockIp(ipAddress);
-        blockedIps = SecurityService.GetBlockedIps();
-        StateHasChanged();
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            SecurityService.UnblockIp(ipAddress);
+            blockedIps = SecurityService.GetBlockedIps();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erreur lors du déblocage de l'IP {ipAddress}: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+        return Task.CompletedTask;
     }
 
     private async Task ClearLogs()
     {
-        await LogService.ClearLogsAsync();
-        await RefreshData();
-        StateHasChanged();
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            await LogService.ClearLogsAsync();
+            await RefreshData();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erreur lors de la suppression des logs: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
     }
 
     private string GetRowClass(string action)
@@ -356,12 +412,12 @@
     {
         return attackType switch
         {
-            "XSS" => "badge-danger",
-            "SQLi" => "badge-danger",
-            "LFI" => "badge-warning",
-            "SSRF" => "badge-warning",
-            "DoS" => "badge-info",
-            _ => "badge-secondary"
+            "XSS" => "bg-danger",
+            "SQLi" => "bg-danger",
+            "LFI" => "bg-warning",
+            "SSRF" => "bg-warning",
+            "DoS" => "bg-info",
+            _ => "bg-secondary"
         };
     }
 
@@ -369,9 +425,9 @@
     {
         return action switch
         {
-            "BLOCKED" => "badge-danger",
-            "LOGGED" => "badge-warning",
-            _ => "badge-secondary"
+            "BLOCKED" => "bg-danger",
+            "LOGGED" => "bg-warning",
+            _ => "bg-secondary"
         };
     }
 
