@@ -22,8 +22,7 @@
         public string DetectedPattern { get; set; } = string.Empty;
         public string Payload { get; set; } = string.Empty;
         public string Action { get; set; } = string.Empty;
-        public Dictionary<string, string> Headers { get; set; } = new();
-        public string Severity { get; set; } = "Medium";
+        public Dictionary<string, string> Headers { get; set; } = new();     
     }
 
     public class AttackDetectionResult

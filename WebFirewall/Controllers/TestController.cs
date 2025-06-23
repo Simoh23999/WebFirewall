@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 
 namespace WebFirewall.Controllers
 {
@@ -13,39 +14,37 @@ namespace WebFirewall.Controllers
             _logger = logger;
         }
 
-        /// <summary>
-        /// Endpoint de test basique
-        /// </summary>
+        
+        /// Endpoint de test basique        
         [HttpGet("safe")]
         public IActionResult SafeEndpoint()
         {
             return Ok(new { message = "This is a safe endpoint", timestamp = DateTime.UtcNow });
         }
 
-        /// <summary>
-        /// Endpoint vulnérable pour tester XSS (sera bloqué par le firewall)
-        /// </summary>
+        
+        /// Endpoint vulnérable pour tester XSS (sera bloqué par le firewall)        
         [HttpGet("xss")]
         public IActionResult XssTest([FromQuery] string input = "")
         {
-            // Cet endpoint est intentionnellement vulnérable pour tester le firewall
             return Ok(new { message = $"Input received: {input}", timestamp = DateTime.UtcNow });
         }
 
-        /// <summary>
-        /// Endpoint vulnérable pour tester SQL Injection
-        /// </summary>
+        
+        /// Endpoint vulnérable pour tester SQL Injection        
         [HttpPost("sqli")]
-        public IActionResult SqliTest([FromBody] dynamic data)
+        public IActionResult SqliTest([FromBody] JsonElement data)
         {
-            // Cet endpoint simule une vulnérabilité SQL pour tester le firewall
-            var query = data?.query?.ToString() ?? "";
+            string query = "";
+            if (data.TryGetProperty("query", out JsonElement queryElement))
+            {
+                query = queryElement.GetString();
+            }
             return Ok(new { message = $"Query would be: {query}", timestamp = DateTime.UtcNow });
         }
 
-        /// <summary>
-        /// Endpoint pour tester Local File Inclusion
-        /// </summary>
+        
+        /// Endpoint pour tester Local File Inclusion (DIrectory traversal)   
         [HttpGet("lfi")]
         public IActionResult LfiTest([FromQuery] string file = "")
         {
@@ -53,9 +52,8 @@ namespace WebFirewall.Controllers
             return Ok(new { message = $"File requested: {file}", timestamp = DateTime.UtcNow });
         }
 
-        /// <summary>
-        /// Endpoint pour tester SSRF
-        /// </summary>
+        
+        /// Endpoint pour tester SSRF        
         [HttpGet("ssrf")]
         public IActionResult SsrfTest([FromQuery] string url = "")
         {
@@ -63,35 +61,14 @@ namespace WebFirewall.Controllers
             return Ok(new { message = $"URL requested: {url}", timestamp = DateTime.UtcNow });
         }
 
-        /// <summary>
-        /// Endpoint pour générer du trafic et tester le rate limiting
-        /// </summary>
+        
+        /// Endpoint pour générer du trafic et tester le rate limiting        
         [HttpGet("dos")]
         public IActionResult DosTest()
         {
             return Ok(new { message = "DoS test endpoint", timestamp = DateTime.UtcNow });
         }
 
-        /// <summary>
-        /// Endpoint avec upload de fichier pour tester différents vecteurs d'attaque
-        /// </summary>
-        [HttpPost("upload")]
-        public async Task<IActionResult> UploadTest(IFormFile file)
-        {
-            if (file == null)
-                return BadRequest("No file uploaded");
-
-            using var reader = new StreamReader(file.OpenReadStream());
-            var content = await reader.ReadToEndAsync();
-
-            return Ok(new
-            {
-                filename = file.FileName,
-                size = file.Length,
-                contentPreview = content.Take(100),
-                timestamp = DateTime.UtcNow
-            });
-        }
 
         /// <summary>
         /// Génère des requêtes de test automatiques

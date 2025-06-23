@@ -10,7 +10,7 @@ namespace WebFirewall.Middleware
     public class FirewallMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly IFirewallLogService _logService;
+        private readonly FirewallLogService _logService;
         private readonly ISecurityService _securityService;
         private readonly FirewallConfig _config;
         private readonly ILogger<FirewallMiddleware> _logger;
@@ -20,7 +20,7 @@ namespace WebFirewall.Middleware
 
         public FirewallMiddleware(
             RequestDelegate next,
-            IFirewallLogService logService,
+            FirewallLogService logService,
             ISecurityService securityService,
             IOptions<FirewallConfig> config,
             ILogger<FirewallMiddleware> logger)
@@ -202,9 +202,6 @@ namespace WebFirewall.Middleware
                 @"^https?://169\.254\.",
                 @"file://",
                 @"ftp://",
-                @"gopher://",
-                @"dict://",
-                @"ldap://"
             };
 
             return ssrfPatterns.Any(pattern => Regex.IsMatch(url, pattern, RegexOptions.IgnoreCase));

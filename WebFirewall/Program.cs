@@ -1,4 +1,8 @@
+using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
+using WebFirewall.Middleware;
+using WebFirewall.Services;
+using WebFirewall.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,7 +28,7 @@ builder.Services.AddRateLimiter(options =>
 });
 
 // Services personnalisés
-builder.Services.AddSingleton<IFirewallLogService, FirewallLogService>();
+builder.Services.AddSingleton<FirewallLogService>();
 builder.Services.AddSingleton<ISecurityService, SecurityService>();
 builder.Services.Configure<FirewallConfig>(builder.Configuration.GetSection("FirewallConfig"));
 var app = builder.Build();
@@ -51,7 +55,8 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=api/Admin}/{action=dashboard}/{id?}");
+//app.MapControllers();
 app.MapRazorPages();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");

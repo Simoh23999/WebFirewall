@@ -4,17 +4,8 @@ using WebFirewall.Models;
 
 namespace WebFirewall.Services
 {
-    public interface IFirewallLogService
-    {
-        Task LogAsync(FirewallLogEntry entry);
-        Task<List<FirewallLogEntry>> GetLogsAsync(int count = 100);
-        Task<List<FirewallLogEntry>> GetLogsByIpAsync(string ip, int count = 50);
-        Task<List<FirewallLogEntry>> GetLogsByAttackTypeAsync(string attackType, int count = 50);
-        Task<DashboardStats> GetDashboardStatsAsync();
-        Task ClearLogsAsync();
-    }
 
-    public class FirewallLogService : IFirewallLogService
+    public class FirewallLogService
     {
         private readonly ConcurrentQueue<FirewallLogEntry> _logsQueue = new();
         private readonly string _logFilePath;
@@ -30,16 +21,17 @@ namespace WebFirewall.Services
             _ = Task.Run(LoadExistingLogs);
         }
 
+        //enregistrer une nouvelle log
         public async Task LogAsync(FirewallLogEntry entry)
         {
             try
             {
                 _logsQueue.Enqueue(entry);
 
-                // Sauvegarder en fichier de manière asynchrone
+                // Sauvegarder en fichier de maniere asynchrone
                 await SaveLogToFileAsync(entry);
 
-                _logger.LogInformation("Logged suspicious activity: {AttackType} from {ClientIp}",
+                _logger.LogInformation(">>> Logged suspicious activity: {AttackType} from {ClientIp}",
                     entry.AttackType, entry.ClientIp);
             }
             catch (Exception ex)
@@ -58,7 +50,7 @@ namespace WebFirewall.Services
         {
             await Task.CompletedTask;
             return _logsQueue.Where(log => log.ClientIp == ip)
-                           .Reverse()
+                           .Reverse()// ===========================  peut etre supp =========================================
                            .Take(count)
                            .ToList();
         }
@@ -72,6 +64,7 @@ namespace WebFirewall.Services
                            .ToList();
         }
 
+        //Genere les statistiques pour le dashboard
         public async Task<DashboardStats> GetDashboardStatsAsync()
         {
             await Task.CompletedTask;
@@ -82,8 +75,7 @@ namespace WebFirewall.Services
             var stats = new DashboardStats
             {
                 TotalRequests = logs.Count,
-                BlockedRequests = logs.Count(l => l.Action == "BLOCKED"),
-                SuspiciousRequests = logs.Count,
+                BlockedRequests = logs.Count(l => l.Action == "BLOCKED"),                
                 AttackTypes = logs.GroupBy(l => l.AttackType)
                                  .ToDictionary(g => g.Key, g => g.Count()),
                 TopAttackerIps = logs.GroupBy(l => l.ClientIp)
@@ -108,7 +100,7 @@ namespace WebFirewall.Services
                     File.Delete(_logFilePath);
                 }
 
-                _logger.LogInformation("Firewall logs cleared");
+                _logger.LogInformation("Firewall logs cleared !!!!!!!!!!!!");
             }
             finally
             {
@@ -116,6 +108,7 @@ namespace WebFirewall.Services
             }
         }
 
+        //enregistrer une nouvelle log
         private async Task SaveLogToFileAsync(FirewallLogEntry entry)
         {
             await _fileSemaphore.WaitAsync();
@@ -130,7 +123,7 @@ namespace WebFirewall.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error saving log to file");
+                _logger.LogError(ex, "Erreur lors du sauvgard log dans le fichier");
             }
             finally
             {
@@ -138,6 +131,7 @@ namespace WebFirewall.Services
             }
         }
 
+        //Charge les logs 
         private async Task LoadExistingLogs()
         {
             try
@@ -146,7 +140,7 @@ namespace WebFirewall.Services
                     return;
 
                 var lines = await File.ReadAllLinesAsync(_logFilePath);
-                foreach (var line in lines.TakeLast(1000)) // Charger seulement les 1000 derniers logs
+                foreach (var line in lines)
                 {
                     if (string.IsNullOrWhiteSpace(line))
                         continue;
@@ -161,16 +155,16 @@ namespace WebFirewall.Services
                     }
                     catch (JsonException)
                     {
-                        // Ignorer les lignes malformées
+                        // ignorer les lignes malformees au cas s'il y a un
                         continue;
                     }
                 }
 
-                _logger.LogInformation("Loaded {Count} existing firewall logs", _logsQueue.Count);
+                _logger.LogInformation(">>> Loaded {Count} existing firewall logs", _logsQueue.Count);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error loading existing logs");
+                _logger.LogError(ex, ">>>>>>>>>>>  Error loading existing logs");
             }
         }
     }

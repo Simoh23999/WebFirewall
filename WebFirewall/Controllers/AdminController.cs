@@ -8,12 +8,12 @@ namespace WebFirewall.Controllers
     [Route("api/[controller]")]
     public class AdminController : ControllerBase
     {
-        private readonly IFirewallLogService _logService;
+        private readonly FirewallLogService _logService;
         private readonly ISecurityService _securityService;
         private readonly ILogger<AdminController> _logger;
 
         public AdminController(
-            IFirewallLogService logService,
+            FirewallLogService logService,
             ISecurityService securityService,
             ILogger<AdminController> logger)
         {
@@ -22,49 +22,17 @@ namespace WebFirewall.Controllers
             _logger = logger;
         }
 
-        /// <summary>
-        /// Obtenir les statistiques du dashboard
-        /// </summary>
+        
+        /// Obtenir les statistiques du dashboard        
         [HttpGet("dashboard")]
         public async Task<IActionResult> GetDashboardStats()
         {
             var stats = await _logService.GetDashboardStatsAsync();
             return Ok(stats);
         }
-
-        /// <summary>
-        /// Obtenir tous les logs
-        /// </summary>
-        [HttpGet("logs")]
-        public async Task<IActionResult> GetLogs([FromQuery] int count = 100)
-        {
-            var logs = await _logService.GetLogsAsync(count);
-            return Ok(logs);
-        }
-
-        /// <summary>
-        /// Obtenir les logs par IP
-        /// </summary>
-        [HttpGet("logs/ip/{ip}")]
-        public async Task<IActionResult> GetLogsByIp(string ip, [FromQuery] int count = 50)
-        {
-            var logs = await _logService.GetLogsByIpAsync(ip, count);
-            return Ok(logs);
-        }
-
-        /// <summary>
-        /// Obtenir les logs par type d'attaque
-        /// </summary>
-        [HttpGet("logs/attack/{attackType}")]
-        public async Task<IActionResult> GetLogsByAttackType(string attackType, [FromQuery] int count = 50)
-        {
-            var logs = await _logService.GetLogsByAttackTypeAsync(attackType, count);
-            return Ok(logs);
-        }
-
-        /// <summary>
-        /// Vider tous les logs
-        /// </summary>
+        
+       
+        /// Vider tous les logs        
         [HttpDelete("logs")]
         public async Task<IActionResult> ClearLogs()
         {
@@ -72,10 +40,8 @@ namespace WebFirewall.Controllers
             _logger.LogInformation("Logs cleared by admin");
             return Ok(new { message = "Logs cleared successfully" });
         }
-
-        /// <summary>
-        /// Obtenir la liste des IPs bloquées
-        /// </summary>
+        
+        /// Obtenir la liste des IPs bloquées        
         [HttpGet("blocked-ips")]
         public IActionResult GetBlockedIps()
         {
@@ -83,9 +49,8 @@ namespace WebFirewall.Controllers
             return Ok(blockedIps);
         }
 
-        /// <summary>
-        /// Bloquer une IP
-        /// </summary>
+        
+        /// Bloquer une IP        
         [HttpPost("block-ip")]
         public IActionResult BlockIp([FromBody] BlockIpRequest request)
         {
@@ -96,52 +61,16 @@ namespace WebFirewall.Controllers
             return Ok(new { message = $"IP {request.IpAddress} blocked successfully" });
         }
 
-        /// <summary>
-        /// Débloquer une IP
-        /// </summary>
+        
+        /// Débloquer une IP        
         [HttpDelete("block-ip/{ip}")]
         public IActionResult UnblockIp(string ip)
         {
             _securityService.UnblockIp(ip);
             return Ok(new { message = $"IP {ip} unblocked successfully" });
         }
-
-        /// <summary>
-        /// Obtenir la liste des IPs en whitelist
-        /// </summary>
-        [HttpGet("whitelist")]
-        public IActionResult GetWhitelist()
-        {
-            var whitelistedIps = _securityService.GetWhitelistedIps();
-            return Ok(whitelistedIps);
-        }
-
-        /// <summary>
-        /// Ajouter une IP à la whitelist
-        /// </summary>
-        [HttpPost("whitelist")]
-        public IActionResult AddToWhitelist([FromBody] WhitelistRequest request)
-        {
-            if (string.IsNullOrEmpty(request.IpAddress))
-                return BadRequest("IP address is required");
-
-            _securityService.AddToWhitelist(request.IpAddress);
-            return Ok(new { message = $"IP {request.IpAddress} added to whitelist" });
-        }
-
-        /// <summary>
-        /// Retirer une IP de la whitelist
-        /// </summary>
-        [HttpDelete("whitelist/{ip}")]
-        public IActionResult RemoveFromWhitelist(string ip)
-        {
-            _securityService.RemoveFromWhitelist(ip);
-            return Ok(new { message = $"IP {ip} removed from whitelist" });
-        }
-
-        /// <summary>
-        /// Obtenir les statistiques en temps réel
-        /// </summary>
+        
+        /// Obtenir les statistiques en temps réel        
         [HttpGet("stats/realtime")]
         public async Task<IActionResult> GetRealtimeStats()
         {
@@ -166,8 +95,4 @@ namespace WebFirewall.Controllers
         public string? Reason { get; set; }
     }
 
-    public class WhitelistRequest
-    {
-        public string IpAddress { get; set; } = string.Empty;
-    }
 }

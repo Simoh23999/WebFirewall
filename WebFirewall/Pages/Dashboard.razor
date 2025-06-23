@@ -1,10 +1,15 @@
 ﻿@page "/dashboard"
 @using WebFirewall.Models
 @using WebFirewall.Services
-@inject IFirewallLogService LogService
+@using Microsoft.AspNetCore.Components.Web
+@inject FirewallLogService LogService
 @inject ISecurityService SecurityService
 @inject IJSRuntime JSRuntime
 @implements IDisposable
+@using Microsoft.JSInterop
+
+
+
 
 <PageTitle>Firewall Dashboard</PageTitle>
 
