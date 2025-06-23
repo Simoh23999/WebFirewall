@@ -19,7 +19,7 @@ namespace WebFirewall.Controllers
         [HttpGet("safe")]
         public IActionResult SafeEndpoint()
         {
-            return Ok(new { message = "This is a safe endpoint", timestamp = DateTime.UtcNow });
+            return Ok(new { message = "This is a safe endpoint", timestamp = DateTime.UtcNow.AddHours(1) });
         }
 
         
@@ -27,7 +27,7 @@ namespace WebFirewall.Controllers
         [HttpGet("xss")]
         public IActionResult XssTest([FromQuery] string input = "")
         {
-            return Ok(new { message = $"Input received: {input}", timestamp = DateTime.UtcNow });
+            return Ok(new { message = $"Input received: {input}", timestamp = DateTime.UtcNow.AddHours(1) });
         }
 
         
@@ -40,7 +40,7 @@ namespace WebFirewall.Controllers
             {
                 query = queryElement.GetString();
             }
-            return Ok(new { message = $"Query would be: {query}", timestamp = DateTime.UtcNow });
+            return Ok(new { message = $"Query would be: {query}", timestamp = DateTime.UtcNow.AddHours(1) });
         }
 
         

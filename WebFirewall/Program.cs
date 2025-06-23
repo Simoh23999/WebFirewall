@@ -3,6 +3,7 @@ using System.Threading.RateLimiting;
 using WebFirewall.Middleware;
 using WebFirewall.Services;
 using WebFirewall.Models;
+using Microsoft.AspNetCore.Builder;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -57,6 +58,7 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=api/Admin}/{action=dashboard}/{id?}");
 //app.MapControllers();
+
 app.MapRazorPages();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
