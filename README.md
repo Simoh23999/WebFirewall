@@ -18,7 +18,7 @@ seulement clone de depot
 1. **Cloner ce dépôt :**
    ```bash
    git clone https://github.com/Simoh23999/WebFirewall.git
-   cd projet-waf-dotnet
+   cd WebFirewall
 
 
 ## Utilisation
