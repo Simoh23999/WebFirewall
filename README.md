@@ -20,6 +20,9 @@ seulement clone de depot
    git clone https://github.com/Simoh23999/WebFirewall.git
    cd WebFirewall
 
+## Accéder à l’application
+- Swagger : ```http://localhost:5021/swagger```
+- Dashboard Admin : ```http://localhost:5021/dashboard```
 
 ## Utilisation
 des endpoint de test :
